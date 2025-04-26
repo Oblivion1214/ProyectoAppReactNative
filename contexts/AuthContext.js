@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => signOut(auth);
 
-  if (loading) return null; // o un Splash
+  if (loading) return null;
 
   return (
     <AuthContext.Provider value={{ user, role, logout }}>
