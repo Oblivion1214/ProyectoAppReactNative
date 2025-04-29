@@ -18,7 +18,7 @@ import { AuthContext }    from '../contexts/AuthContext';
 import { db }             from '../firebase/config';
 
 export default function ModificarScreen() {
-  const { user }      = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const [searchId, setSearchId] = useState('');
   const [product, setProduct]   = useState(null);
   const [nombre, setNombre]     = useState('');
@@ -30,17 +30,21 @@ export default function ModificarScreen() {
 
   const handleBuscar = async () => {
     if (!searchId.trim()) return Alert.alert('Error', 'Ingrese ID');
-    const snap = await get(ref(db, `productos/${searchId.trim()}`));
-    if (snap.exists()) {
-      const data = snap.val();
-      setProduct(data);
-      setNombre(data.nombre);
-      setDesc(data.descripcion);
-      setFecha(data.fecha);
-      setImageUri(data.imagen ? `data:image/jpeg;base64,${data.imagen}` : null);
-      setBase64(data.imagen || '');
-    } else {
-      Alert.alert('No encontrado', 'Producto no existe');
+    try {
+      const snap = await get(ref(db, `productos/${searchId.trim()}`));
+      if (snap.exists()) {
+        const data = snap.val();
+        setProduct(data);
+        setNombre(data.nombre);
+        setDesc(data.descripcion);
+        setFecha(data.fecha);
+        setImageUri(data.imagen ? `data:image/jpeg;base64,${data.imagen}` : null);
+        setBase64(''); // <-- se limpia para no sobreescribir si no se cambia
+      } else {
+        Alert.alert('No encontrado', 'Producto no existe');
+      }
+    } catch (err) {
+      Alert.alert('Error', err.message);
     }
   };
 
@@ -58,10 +62,8 @@ export default function ModificarScreen() {
       Alert.alert('Permiso denegado');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.5,
-    });
 
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
     if (!result.canceled && result.assets?.length > 0) {
       const uri = result.assets[0].uri;
       setImageUri(uri);
@@ -69,23 +71,36 @@ export default function ModificarScreen() {
       const b64 = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64
       });
-      setImageBase64(b64);
+      setBase64(b64);
     }
   };
 
-
   const handleUpdate = async () => {
     if (!product) return;
+
     if (product.providerId !== user.uid) {
       return Alert.alert('Permiso denegado', 'No puedes modificar este producto');
     }
-    if (!nombre || !descripcion || !fecha || !imageBase64) {
+
+    if (!nombre || !descripcion || !fecha) {
       return Alert.alert('Error', 'Completa todos los campos');
     }
-    const updated = { ...product, nombre, descripcion, fecha, imagen: imageBase64 };
-    set(ref(db, `productos/${product.id}`), updated)
-      .then(() => Alert.alert('¡Actualizado!', 'Éxito'))
-      .catch(err => Alert.alert('Error', err.message));
+
+    const updated = {
+      ...product,
+      nombre,
+      descripcion,
+      fecha,
+      imagen: imageBase64 || product.imagen, // Se conserva imagen si no se cambia
+      activo: product.activo ?? true         // Se conserva estado 'activo'
+    };
+
+    try {
+      await set(ref(db, `productos/${product.id}`), updated);
+      Alert.alert('¡Actualizado!', 'Éxito al modificar producto');
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    }
   };
 
   return (
@@ -164,12 +179,12 @@ export default function ModificarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:    { flexGrow:1, backgroundColor:'#FFCC80', padding:16 },
-  input:        { backgroundColor:'#FFF', padding:12, borderRadius:4, marginBottom:12 },
-  button:       { marginVertical:8 },
-  date:         { fontSize:16, marginBottom:12 },
+  container: { flexGrow:1, backgroundColor:'#FFCC80', padding:16 },
+  input: { backgroundColor:'#FFF', padding:12, borderRadius:4, marginBottom:12 },
+  button: { marginVertical:8 },
+  date: { fontSize:16, marginBottom:12 },
   photoContainer: {
-    width: '100%',           // <-- ancho completo
+    width: '100%',
     height: 200,
     backgroundColor:'#E0E0E0',
     borderRadius:4,
@@ -177,6 +192,6 @@ const styles = StyleSheet.create({
     alignItems:'center',
     marginBottom:16
   },
-  photo:            { width:'100%', height:'100%', borderRadius:4 },
+  photo: { width:'100%', height:'100%', borderRadius:4 },
   photoPlaceholder: { color:'#777' }
 });
