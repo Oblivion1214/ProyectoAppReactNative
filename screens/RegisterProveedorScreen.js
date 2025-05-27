@@ -85,6 +85,11 @@ export default function RegisterProveedorScreen({ navigation }) {
         onChangeText={setCode}
         style={styles.input}
       />
+      
+      <Text style={styles.error}>{error}</Text>
+      <Text style={styles.error}>
+        El código de proveedor es: {"123456"}
+      </Text>
 
       <View style={styles.buttonContainer}>
         <Button title="Registrarse" onPress={handleRegister} color="#FF9800" />

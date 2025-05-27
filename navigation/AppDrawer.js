@@ -17,6 +17,7 @@ import ListarActivosScreen from '../screens/ListarActivosScreen';
 import ListarInactivosScreen from '../screens/ListarInactivosScreen';
 import ListarActivosClienteScreen from '../screens/ListarActivosClienteScreen';
 import CreditosScreen from '../screens/CreditosScreen';
+import LocationScreen from '../screens/LocationScreen'; // ✅ Importación corregida
 
 const Drawer = createDrawerNavigator();
 
@@ -59,6 +60,12 @@ function CustomDrawerContent(props) {
         </>
       )}
 
+      {/* ✅ Opción visible para ambos roles */}
+      <DrawerItem
+        label="Ubicación Tienda"
+        onPress={() => props.navigation.navigate('Ubicacion')}
+      />
+
       <DrawerItem
         label="Cerrar Sesión"
         onPress={() => logout()}
@@ -82,6 +89,9 @@ export default function AppDrawer() {
       <Drawer.Screen name="ListarInactivos" component={ListarInactivosScreen} options={{ title: 'Listar Inactivos' }} />
       <Drawer.Screen name="ListarActivosCliente" component={ListarActivosClienteScreen} options={{ title: 'Listar Activos Cliente' }} />
       <Drawer.Screen name="Creditos" component={CreditosScreen} options={{ title: 'Créditos' }} />
+
+      {/* ✅ Pantalla de ubicación */}
+      <Drawer.Screen name="Ubicacion" component={LocationScreen} options={{ title: 'Ubicación Tienda' }} />
     </Drawer.Navigator>
   );
 }
